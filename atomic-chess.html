@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atomic Chess</title>
+<style>
+:root{color-scheme:dark;--bg:#312e2b;--p:#262421;--p2:#3d3a37;--mu:#a7a6a2;--g:#81b64c;--gs:#45753c;--l:#ebecd0;--d:#779556;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{background:#312e2b;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:#fff;font:600 15px/1.4 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+.app{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;align-items:flex-start;padding:14px}
+.main{--bw:min(94vw,calc(100vh - 150px),640px);width:var(--bw)}
+.bar{display:flex;align-items:center;gap:10px;height:46px}
+.av{width:34px;height:34px;border-radius:4px;background:#5d5955;display:grid;place-items:center;font-weight:800}
+.nm{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm small{color:var(--mu);font-weight:600}
+.ck{min-width:96px;text-align:right;font:700 22px/1 ui-monospace,Consolas,monospace;background:var(--p);color:var(--mu);padding:9px 11px;border-radius:4px}
+.ck.on{background:#fff;color:#262421}.ck.lo{color:#e0504d}
+.bd{display:grid;grid:repeat(8,1fr)/repeat(8,1fr);width:var(--bw);height:var(--bw);border-radius:4px;overflow:hidden;user-select:none}
+.s{position:relative;display:grid;place-items:center;font-size:calc(var(--bw)/8*.8);line-height:1;cursor:pointer}
+.s.l{background:var(--l)}.s.d{background:var(--d)}
+.lm::before{content:"";position:absolute;inset:0;background:rgba(255,255,0,.45)}
+.ch{background-image:radial-gradient(circle,#f33 0,#d00 32%,rgba(255,0,0,0) 72%)}
+.pc{position:relative;z-index:2;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","Apple Symbols","DejaVu Sans",sans-serif}
+.pc.w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 1px 2px #000}
+.pc.b{color:#222;text-shadow:0 0 1px #aaa}
+.h::after{content:"";position:absolute;top:35%;left:35%;width:30%;height:30%;border-radius:50%;background:rgba(0,0,0,.2);z-index:3}
+.h.x::after{inset:0;width:auto;height:auto;background:none;border:calc(var(--bw)/8*.08) solid rgba(0,0,0,.2)}
+.bm::after{content:"";position:absolute;inset:-25%;background:radial-gradient(circle,#fff 0,#ffb347 30%,#ff5a00 55%,transparent 72%);animation:bm .9s ease-out forwards;z-index:4;pointer-events:none}
+@keyframes bm{from{opacity:1;transform:scale(.3)}to{opacity:0;transform:scale(1.5)}}
+.co{position:absolute;font-style:normal;font-weight:800;font-size:calc(var(--bw)/8*.16);line-height:1;pointer-events:none}
+.l .co{color:var(--d)}.d .co{color:var(--l)}.co.r{left:4%;top:4%}.co.f{right:4%;bottom:4%}
+.side{width:min(94vw,380px);background:var(--p);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px}
+#su,#gv,#onl{display:flex;flex-direction:column;gap:10px}
+.logo{color:var(--g);font-weight:800;font-size:22px}
+.lbl{color:var(--mu);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.hint{color:var(--mu);font-size:13px;font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+button,input,textarea{font:inherit;color:inherit}
+.tc,.sm{background:var(--p2);border:0;border-radius:6px;padding:10px 6px;cursor:pointer;font-weight:700}
+.tc.on{outline:2px solid var(--g);background:#4b4846}
+.big{background:var(--g);border:0;border-radius:8px;padding:14px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 var(--gs);color:#fff}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 var(--gs)}
+.big.alt{background:var(--p2);box-shadow:0 4px 0 #1f1d1b}
+input,textarea{background:#1f1d1b;border:1px solid #4b4846;border-radius:6px;padding:10px;width:100%}textarea{height:72px;resize:none;font:11px/1.3 ui-monospace,Consolas,monospace;word-break:break-all}
+.row{display:flex;gap:8px}.row .sm{flex:1}
+.mv{height:300px;overflow:auto;background:#1f1d1b;border-radius:6px;padding:8px;display:grid;grid-template-columns:34px 1fr 1fr;gap:3px 6px;align-content:start}
+.mv b{color:var(--mu)}
+.bw{position:relative}
+.ov{position:absolute;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:9}
+.card{background:var(--bg);border-radius:10px;padding:18px;text-align:center;width:80%;box-shadow:0 8px 30px #000a;display:flex;flex-direction:column;gap:10px}
+.card h3{margin:0;font-size:24px}
+</style></head><body>
+<div class="app">
+ <div class="main">
+  <div class="bar" id="bt"></div>
+  <div class="bw"><div class="bd" id="bd"></div><div id="ov"></div></div>
+  <div class="bar" id="bb"></div>
+ </div>
+ <div class="side">
+  <div class="logo">♞ Atomic Chess</div>
+  <div id="su">
+   <div class="hint">Every capture explodes: the capturing piece, the captured piece and all non-pawn pieces around the target square vanish. Explode the enemy king to win. Kings can’t capture.</div>
+   <div class="lbl">Time control</div><div class="grid" id="tcs"></div>
+   <button class="big" id="bL">Play on this device</button>
+   <input id="nm" maxlength="14" placeholder="Your display name (for online games)">
+   <div class="lbl">Play a friend online (claude.ai)</div>
+   <div id="onx" class="hint">Checking online features…</div>
+   <div id="onl" hidden>
+    
+    <button class="big alt" id="bC">Create online game</button>
+    <div class="row"><input id="code" maxlength="5" placeholder="Game code"><button class="sm" id="bJ" style="flex:0 0 80px">Join</button></div>
+    <div class="hint">Create a game, share this page with your friend (with Contributor access), then send them the code.</div>
+   </div>
+   <div class="lbl">Direct connection (works from a saved .html)</div>
+   <div class="row"><button class="sm" id="pH">Host a game</button><button class="sm" id="pG">Join a game</button></div>
+   <div id="pp" hidden>
+    <div class="hint" id="pt"></div>
+    <div id="pm" hidden style="display:flex;flex-direction:column;gap:8px"><textarea id="pa" readonly placeholder="Generating code…"></textarea><button class="sm" id="pcy">Copy code</button></div>
+    <div id="pi" style="display:flex;flex-direction:column;gap:8px"><textarea id="pb" placeholder="Paste your friend’s code here"></textarea><button class="big alt" id="pk">Connect</button></div>
+    <div class="hint">Works best on home networks. Some mobile or work networks block direct connections.</div>
+   </div>
+   <div id="msg" class="hint"></div>
+  </div>
+  <div id="gv" hidden>
+   <div id="st" style="font-size:18px;font-weight:800"></div>
+   <div id="info" class="hint"></div>
+   <div class="mv" id="ml"></div>
+   <div class="row"><button class="sm" id="bFl">⇅ Flip</button><button class="sm" id="bDr">½ Draw</button><button class="sm" id="bRes">⚑ Resign</button></div>
+   <button class="big" id="bNg">New game</button>
+  </div>
+ </div>
+</div>
+<script>
+const $=s=>document.querySelector(s),F='abcdefgh';
+const sq=i=>F[i&7]+(8-(i>>3)),cl=p=>p<'a'?0:1,on=(r,c)=>r>=0&&r<8&&c>=0&&c<8;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const NN=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]],KK=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+const GL={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+const init=()=>({b:[...'rnbqkbnr',...'pppppppp',...Array(32).fill(''),...'PPPPPPPP',...'RNBQKBNR'],t:0,cr:[1,1,1,1],ep:-1,hm:0,ply:0,boom:[]});
+const ks=(b,c)=>b.indexOf(c?'k':'K');
+const adj=(a,c)=>a>=0&&c>=0&&Math.abs((a>>3)-(c>>3))<2&&Math.abs((a&7)-(c&7))<2;
+function att(b,s,c){const r=s>>3,f=s&7,pr=c?r-1:r+1;
+ for(const d of[-1,1])if(on(pr,f+d)&&b[pr*8+f+d]==(c?'p':'P'))return 1;
+ for(const[a,d]of NN)if(on(r+a,f+d)&&b[(r+a)*8+f+d]==(c?'n':'N'))return 1;
+ for(const[a,d]of KK){let y=r+a,x=f+d,k=1;
+  while(on(y,x)){const p=b[y*8+x];if(p){const q=p.toLowerCase();if(cl(p)==c&&(q=='q'||q==(a&&d?'b':'r')||(k&&q=='k')))return 1;break}y+=a;x+=d;k=0}}
+ return 0}
+const chk=(b,c)=>{const k=ks(b,c);return k>=0&&!adj(k,ks(b,1-c))&&att(b,k,1-c)};
+function gen(S){const{b,t,cr,ep}=S,o=[];
+ for(let i=0;i<64;i++){const p=b[i];if(!p||cl(p)!=t)continue;
+  const r=i>>3,f=i&7,q=p.toLowerCase(),ad=(to,x)=>o.push({f:i,t:to,...x});
+  if(q=='p'){const d=t?1:-1,r1=r+d,pr=r1==(t?7:0);
+   if(on(r1,f)&&!b[r1*8+f]){const to=r1*8+f;ad(to,{pr});if(r==(t?1:6)&&!b[to+d*8])ad(to+d*8)}
+   for(const dx of[-1,1])if(on(r1,f+dx)){const to=r1*8+f+dx;if(b[to]&&cl(b[to])!=t)ad(to,{x:1,pr});else if(to==ep)ad(to,{x:1,e:1})}}
+  else if(q=='n'||q=='k'){for(const[a,d]of q=='n'?NN:KK)if(on(r+a,f+d)){const to=(r+a)*8+f+d,c=b[to];if(!c||(q=='n'&&cl(c)!=t))ad(to,c?{x:1}:{})}}
+  else for(const[a,d]of KK){if(q=='b'&&!(a&&d)||q=='r'&&a&&d)continue;let y=r+a,x=f+d;
+   while(on(y,x)){const to=y*8+x,c=b[to];if(c){if(cl(c)!=t)ad(to,{x:1});break}ad(to);y+=a;x+=d}}}
+ const k=t?4:60;
+ if(b[k]==(t?'k':'K')&&!chk(b,t)){const R=t?'r':'R',e=1-t;
+  if(cr[t*2]&&b[k+3]==R&&!b[k+1]&&!b[k+2]&&!att(b,k+1,e)&&!att(b,k+2,e))o.push({f:k,t:k+2,c:1});
+  if(cr[t*2+1]&&b[k-4]==R&&!b[k-1]&&!b[k-2]&&!b[k-3]&&!att(b,k-1,e)&&!att(b,k-2,e))o.push({f:k,t:k-2,c:1})}
+ return o}
+function app(S,m){const b=S.b.slice(),p=b[m.f],t=S.t;let boom=[];b[m.f]='';
+ if(m.e)b[m.t+(t?-8:8)]='';
+ if(m.c){const u=m.t>m.f,rf=u?m.f+3:m.f-4;b[u?m.f+1:m.f-1]=b[rf];b[rf]='';b[m.t]=p}
+ else if(m.x){boom=[m.t];b[m.t]='';for(const[a,d]of KK){const r=(m.t>>3)+a,c=(m.t&7)+d,i=r*8+c;if(on(r,c)&&b[i]&&b[i].toLowerCase()!='p'){b[i]='';boom.push(i)}}}
+ else b[m.t]=m.pr?(t?(m.p||'q'):(m.p||'q').toUpperCase()):p;
+ const cr=S.cr.map((v,i)=>v&&b[[60,60,4,4][i]]=='KKkk'[i]&&b[[63,56,7,0][i]]=='RRrr'[i]?1:0),pw=p.toLowerCase()=='p';
+ return{b,t:1-t,cr,ep:pw&&Math.abs(m.t-m.f)==16?(m.f+m.t)/2:-1,hm:pw||m.x?0:S.hm+1,ply:S.ply+1,boom}}
+const legal=S=>gen(S).filter(m=>{const n=app(S,m);return ks(n.b,S.t)>=0&&(ks(n.b,1-S.t)<0||!chk(n.b,S.t))});
+function san(S,m,L){const p=S.b[m.f],q=p.toUpperCase();if(m.c)return m.t>m.f?'O-O':'O-O-O';
+ return(q=='P'?(m.x?F[m.f&7]:''):q+(L.some(o=>o!=m&&S.b[o.f]==p&&o.t==m.t)?sq(m.f):''))+(m.x?'x':'')+sq(m.t)+(m.pr&&!m.x?'='+(m.p||'q').toUpperCase():'')}
+const key=S=>S.b.map(p=>p||'.').join('')+S.t+S.cr.join('')+S.ep;
+function weak(b,c){const m=[],o=[];b.forEach(p=>{if(p&&p!='k'&&p!='K')(cl(p)==c?m:o).push(p.toLowerCase())});
+ return!m.length||(!o.length&&m.length==1&&!'qp'.includes(m[0]))}
+const fmt=ms=>{ms=Math.max(0,ms);const s=ms/1000|0;return ms<1e4?s+'.'+((ms/100|0)%10):(s/60|0)+':'+String(s%60).padStart(2,'0')};
+
+let tc=[5,0],db=null,uid=null,unsub=null,G=null;
+function endchk(){const{b,t,hm}=G.S;
+ if(ks(b,0)<0)return[1,'The White king was exploded'];if(ks(b,1)<0)return[0,'The Black king was exploded'];
+ if(!G.L.length)return chk(b,t)?[1-t,'Checkmate']:[2,'Stalemate'];
+ if(hm>=100)return[2,'50-move rule'];
+ const h=G.hist,k=h[h.length-1];if(h.filter(x=>x==k).length>=3)return[2,'Threefold repetition'];
+ if(weak(b,0)&&weak(b,1))return[2,'Insufficient material']}
+function finish(w,why,push){if(G.res)return;G.res=[w,why];if(push&&G.mode=='on')G.ref.update({res:w+'|'+why}).catch(()=>{});render()}
+function play(m,remote){const S=G.S,t=S.t,now=Date.now(),n=app(S,m),both=ks(n.b,0)>=0&&ks(n.b,1)>=0;
+ if(S.ply>=2&&G.tc[0])G.clk[t]+=G.tc[1]*1e3-(now-G.last);
+ G.last=now;
+ const sn=san(S,m,G.L)+(!both?'#':chk(n.b,n.t)?'+':'');
+ G.S=n;G.L=both?legal(n):[];G.sans.push(sn);G.mv.push(m.f+','+m.t+','+(m.p||''));G.hist.push(key(n));G.lm=[m.f,m.t];G.boom=n.boom;G.sel=-1;
+ if(G.mode=='on'&&!remote)G.ref.update({mv:G.mv}).catch(()=>{});
+ const r=endchk();if(r)finish(r[0],r[1],0);else render();
+ G.boom=[]}
+function clk(i){if(G.res||G.wait||G.idle||G.pm)return;const S=G.S;if(G.mode=='on'&&S.t!=G.me)return;
+ if(G.sel>=0){const m=G.L.find(m=>m.f==G.sel&&m.t==i);if(m){if(m.pr&&!m.x){G.pm=m;return render()}return play(m)}}
+ G.sel=i!=G.sel&&S.b[i]&&cl(S.b[i])==S.t?i:-1;render()}
+function render(){const S=G.S,h=new Map(G.sel>=0?G.L.filter(m=>m.f==G.sel).map(m=>[m.t,m]):[]),kc=chk(S.b,S.t)?ks(S.b,S.t):-1;let s='';
+ for(let y=0;y<8;y++)for(let x=0;x<8;x++){const i=G.flip?63-y*8-x:y*8+x,p=S.b[i],r=i>>3,c=i&7,k=['s',(r+c)&1?'d':'l'];
+  if((G.lm&&G.lm.includes(i))||i==G.sel)k.push('lm');if(h.has(i))k.push('h',h.get(i).x?'x':'');if(i==kc)k.push('ch');if(G.boom.includes(i))k.push('bm');
+  s+=`<div class="${k.join(' ')}" data-i="${i}">${x?'':`<i class="co r">${8-r}</i>`}${y<7?'':`<i class="co f">${F[c]}</i>`}${p?`<span class="pc ${cl(p)?'b':'w'}">${GL[p.toLowerCase()]}\uFE0E</span>`:''}</div>`}
+ $('#bd').innerHTML=s;
+ const bar=c=>`<div class="av">${esc((G.nm[c]||'?')[0])}</div><div class="nm">${esc(G.nm[c])} <small>${c?'Black':'White'}</small></div><div class="ck" id="ck${c}"></div>`;
+ $('#bt').innerHTML=bar(G.flip?0:1);$('#bb').innerHTML=bar(G.flip?1:0);
+ const ml=$('#ml');ml.innerHTML=G.sans.map((x,i)=>i%2?`<span>${x}</span>`:`<b>${i/2+1}.</b><span>${x}</span>`).join('');ml.scrollTop=1e5;
+ $('#st').textContent=G.res?'Game over':G.wait?'Waiting for opponent… code '+G.code:(S.t?'Black':'White')+' to move'+(kc>=0?' — check':'');
+ $('#info').textContent=(G.mode=='on'?`${G.code?'Online · code '+G.code:'Direct connection'} · you are ${G.me?'Black':'White'} · `:'This device · ')+(G.tc[0]?G.tc[0]+' min'+(G.tc[1]?' + '+G.tc[1]+' s':''):'no time limit');
+ $('#bDr').hidden=G.mode=='on';
+ $('#ov').innerHTML=G.res?`<div class="ov"><div class="card"><h3>${G.res[0]>1?'Draw':(G.res[0]?'Black':'White')+' wins'}</h3><div>${esc(G.res[1])}</div>${G.mode=='loc'?'<button class="big" id="rm">Rematch</button>':''}<button class="sm" id="nw">New game</button></div></div>`
+  :G.pm?`<div class="ov"><div class="card"><h3>Promote to</h3><div class="row">${[...'qrbn'].map(x=>`<button class="sm" data-p="${x}" style="font-size:34px">${GL[x]}\uFE0E</button>`).join('')}</div></div></div>`:'';
+ tick()}
+function tick(){if(!G)return;const S=G.S,n=Date.now(),run=!G.res&&!G.wait&&!G.idle&&S.ply>=2&&G.tc[0];
+ for(const c of[0,1]){const e=$('#ck'+c);if(!e)continue;let ms=G.clk[c];const a=run&&S.t==c;if(a)ms-=n-G.last;
+  e.textContent=G.tc[0]?fmt(ms):'∞';e.className='ck'+(a?' on':'')+(G.tc[0]&&ms<1e4?' lo':'');
+  if(a&&ms<=0)finish(weak(S.b,1-c)?2:1-c,(c?'Black':'White')+' ran out of time',1)}}
+setInterval(tick,100);
+function newG(mode,t,me,nm){if(unsub){unsub();unsub=null}
+ G={S:init(),L:[],hist:[],mv:[],sans:[],tc:t,clk:[t[0]*6e4,t[0]*6e4],last:Date.now(),mode,me,nm,sel:-1,flip:me==1,lm:null,boom:[],res:null,wait:0,idle:0,pm:null};
+ G.L=legal(G.S);G.hist=[key(G.S)];$('#su').hidden=1;$('#gv').hidden=0;render()}
+const startLocal=()=>newG('loc',tc,-1,['White','Black']);
+function showSetup(){newG('loc',tc,-1,['White','Black']);G.idle=1;$('#pp').hidden=1;$('#su').hidden=0;$('#gv').hidden=1;render()}
+function sync(d){if(!G||G.mode!='on'||!d)return;
+ G.nm=[d.wn||'White',d.bn||'Black'];if(G.wait&&d.b){G.wait=0;G.last=Date.now()}
+ const mv=d.mv||[];
+ while(G.mv.length<mv.length&&!G.res){const[f,t,p]=String(mv[G.mv.length]).split(','),m=G.L.find(m=>m.f==+f&&m.t==+t);if(!m)break;m.p=p||'';play(m,1)}
+ if(d.res&&!G.res){const[w,...y]=String(d.res).split('|');finish(+w,y.join('|'),0)}
+ render()}
+const nmv=()=>$('#nm').value.trim().slice(0,14)||'Player',note=t=>$('#msg').textContent=t;
+function watch(code,me,t,names,wait){newG('on',t,me,names);G.code=code;G.wait=wait;G.ref=db.doc('games/'+code);render();
+ unsub=G.ref.onSnapshot(s=>sync(s.data()),()=>note('Connection lost.'))}
+async function create(){try{const code=Array.from({length:5},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.random()*32|0]).join('');
+ await db.doc('games/'+code).set({tc,w:uid,wn:nmv(),b:'',bn:'',mv:[],res:''});watch(code,0,tc,[nmv(),'Waiting…'],1)}catch(e){note('Could not create the game.')}}
+async function join(){const code=$('#code').value.trim().toUpperCase();if(!/^[A-Z0-9]{5}$/.test(code))return note('Enter the 5-character code.');
+ try{const ref=db.doc('games/'+code),s=await ref.get();if(!s.exists)return note('Game not found.');
+  const d=s.data(),me=d.w==uid?0:(!d.b||d.b==uid)?1:-1,T=[+(d.tc&&d.tc[0])||0,+(d.tc&&d.tc[1])||0];
+  if(me<0)return note('That game is full.');if(me==1&&!d.b)await ref.update({b:uid,bn:nmv()});
+  watch(code,me,T,[d.wn||'White',me?nmv():d.bn||'Black'],+(me==0&&!d.b))}catch(e){note('Could not join the game.')}}
+const PRE=[['Bullet',[[1,0],[1,1],[2,1]]],['Blitz',[[3,0],[3,2],[5,0]]],['Rapid',[[10,0],[15,10],[30,0]]],['Casual',[[0,0]]]];
+$('#tcs').innerHTML=PRE.map(([n,a])=>`<div class="lbl" style="grid-column:1/-1">${n}</div>`+a.map(([m,i])=>`<button class="tc" data-m="${m}" data-i="${i}">${m?(i?m+' | '+i:m+' min'):'No limit'}</button>`).join('')).join('');
+const hl=()=>document.querySelectorAll('.tc').forEach(b=>b.classList.toggle('on',+b.dataset.m==tc[0]&&+b.dataset.i==tc[1]));
+$('#tcs').onclick=e=>{const b=e.target.closest('.tc');if(!b)return;tc=[+b.dataset.m,+b.dataset.i];hl();if(G.idle)showSetup()};
+$('#bd').onclick=e=>{const s=e.target.closest('.s');if(s)clk(+s.dataset.i)};
+$('#ov').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.id=='rm')startLocal();else if(b.id=='nw')showSetup();else if(b.dataset.p){const m=G.pm;G.pm=null;m.p=b.dataset.p;play(m)}};
+$('#bL').onclick=startLocal;$('#bC').onclick=create;$('#bJ').onclick=join;$('#bNg').onclick=showSetup;
+$('#bFl').onclick=()=>{G.flip=!G.flip;render()};
+const two=(id,lab,fn)=>{const b=$(id);let a=0;b.onclick=()=>{if(G.res||G.idle)return;if(!a){a=1;b.textContent='Confirm?';setTimeout(()=>{a=0;b.textContent=lab},2500);return}a=0;b.textContent=lab;fn()}};
+two('#bRes','⚑ Resign',()=>{const c=G.mode=='on'?G.me:G.S.t;finish(1-c,(c?'Black':'White')+' resigned',1)});
+two('#bDr','½ Draw',()=>finish(2,'Draw agreed',1));
+let pc=null,dc=null,role=0,D={};
+const b64=u=>btoa(String.fromCharCode(...u)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),
+ unb=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0)),
+ pipe=async(u,S)=>new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(S)).arrayBuffer());
+const enc=async o=>{const u=new TextEncoder().encode(JSON.stringify(o));return window.CompressionStream?'z'+b64(await pipe(u,new CompressionStream('deflate-raw'))):'r'+b64(u)};
+const dec=async t=>{t=t.replace(/\s/g,'');let u=unb(t.slice(1));if(t[0]=='z')u=await pipe(u,new DecompressionStream('deflate-raw'));return JSON.parse(new TextDecoder().decode(u))};
+const ice=p=>new Promise(r=>{const f=()=>p.iceGatheringState=='complete'&&r();f();p.addEventListener('icegatheringstatechange',f);setTimeout(r,5000)});
+const mkpc=()=>{if(pc)try{pc.close()}catch(e){}return pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]})};
+function wire(ch){dc=ch;
+ ch.onopen=()=>{if(role==0)startP2P(0)};
+ ch.onmessage=e=>{let o;try{o=JSON.parse(e.data)}catch(_){return}if(!o||typeof o!='object')return;
+  for(const k of['wn','bn','tc','mv','res'])if(k in o)D[k]=o[k];
+  if(G&&G.p2p)sync(D);else if(role==1&&D.tc)startP2P(1)};
+ ch.onclose=()=>{if(G&&G.p2p&&!G.res)finish(2,'Connection lost',0)}}
+function startP2P(me){const ch=dc,p=pc;if(!me)D={wn:nmv(),bn:'Guest',mv:[],res:'',tc};else{D.bn=nmv();D.mv=[];D.res=''}
+ newG('on',[+(D.tc&&D.tc[0])||0,+(D.tc&&D.tc[1])||0],me,[D.wn||'White',D.bn]);
+ G.p2p=1;G.ref={update:o=>Promise.resolve().then(()=>ch.send(JSON.stringify(o)))};
+ unsub=()=>{ch.onclose=null;try{p.close()}catch(e){}};
+ ch.send(JSON.stringify(me?{bn:D.bn}:{wn:D.wn,tc}))}
+const pp=(t,m,i)=>{$('#pp').hidden=0;$('#pt').textContent=t;$('#pm').hidden=!m;$('#pi').hidden=!i;$('#pa').value='';$('#pb').value='';note('')};
+async function pHost(){role=0;mkpc();wire(pc.createDataChannel('g'));pp('1. Send this code to your friend. 2. Paste their reply code below and press Connect.',1,1);
+ try{await pc.setLocalDescription(await pc.createOffer());await ice(pc);$('#pa').value=await enc(pc.localDescription)}catch(e){note('Could not create a code in this browser.')}}
+const pJoin=()=>{role=1;pp('Paste the code your friend sent you, then press Connect.',0,1)};
+async function pGo(){try{const d=await dec($('#pb').value);
+ if(role==0){await pc.setRemoteDescription(d);$('#pt').textContent='Connecting…'}
+ else{mkpc();pc.ondatachannel=e=>wire(e.channel);await pc.setRemoteDescription(d);await pc.setLocalDescription(await pc.createAnswer());await ice(pc);
+  pp('Send this reply code back to your friend. The game starts as soon as they press Connect.',1,0);$('#pa').value=await enc(pc.localDescription)}}
+ catch(e){note('That code didn’t work. Copy it again in full and retry.')}}
+$('#pH').onclick=pHost;$('#pG').onclick=pJoin;$('#pk').onclick=pGo;$('#pa').onclick=e=>e.target.select();
+$('#pcy').onclick=async()=>{const a=$('#pa');if(!a.value)return;a.select();try{await navigator.clipboard.writeText(a.value)}catch(e){document.execCommand('copy')}note('Code copied.')};
+hl();showSetup();
+(async()=>{try{db=await claude.use('db');const u=await claude.use('user');uid=u?await u.id():null}catch(e){}
+ const ok=db&&uid;$('#onl').hidden=!ok;$('#onx').hidden=!!ok;if(!ok)$('#onx').textContent='Online play needs this page to be opened while signed in to claude.ai.'})();
+</script></body></html>
